@@ -1,0 +1,11 @@
+{
+  "name": "gource",
+  "type": "module",
+  "packageManager": "yarn@4.1.1",
+  "peerDependencies": {
+    "zx": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30"
+  }
+}
