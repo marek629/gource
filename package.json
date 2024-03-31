@@ -6,6 +6,10 @@
     "zx": "*"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30"
+    "@types/node": "^20.11.30",
+    "prettier": "^3.2.5"
+  },
+  "scripts": {
+    "test": "prettier --write ."
   }
 }
