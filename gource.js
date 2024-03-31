@@ -11,9 +11,8 @@ const args = projects.map(
 );
 
 const pipeline = $`yarn dlx concurrently --raw --max-processes 2 ${args}`
-  // TODO: change to positive filtering
   .pipe($`grep -v '➤'`)
-  .pipe($`grep -v '^$'`)
+  .pipe($`grep --color=never -E '^[0-9]+\|[[:alnum:][:space:]]+\|[AMD]+\|[[:alnum:][:space:][:punct:]]+$' -`)
   .pipe($`sort`.quiet())
   .pipe($`gource --log-format custom -`.quiet());
 
