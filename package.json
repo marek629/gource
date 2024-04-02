@@ -2,21 +2,22 @@
   "name": "gource",
   "type": "module",
   "packageManager": "yarn@4.1.1",
-  "peerDependencies": {
-    "zx": "*"
-  },
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@types/sinon": "^17.0.3",
+    "faucet": "^0.0.4",
     "prettier": "^3.2.5",
-    "sinon": "^17.0.1"
+    "sinon": "^17.0.1",
+    "tape": "^5.7.5"
   },
   "scripts": {
     "lint": "prettier --write .",
-    "test": "node --test --test-reporter tap test/",
+    "test": "node --test --test-reporter tap test/ | faucet",
     "test:watch": "node --test --test-reporter tap --watch test/"
   },
   "dependencies": {
-    "nodegit": "^0.27.0"
+    "mustache": "^4.2.0",
+    "nodegit": "^0.27.0",
+    "zx": "^7.2.3"
   }
 }

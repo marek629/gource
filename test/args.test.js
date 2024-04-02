@@ -1,7 +1,7 @@
-import { deepEqual } from 'node:assert/strict'
+import { deepEqual, equal } from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import { fake, stub } from 'sinon'
+import { fake, match, stub } from 'sinon'
 
 import { args, external } from '../src/args.js'
 
@@ -18,21 +18,36 @@ const t = {
   context: {},
 }
 
-const argsTest = (projects, repositories, pwd, expected) => async () => {
-  t.context.wrapped = {
-    cwd: stub(external, 'cwd').returns(pwd),
-    open: stub(external.Repository, 'open'),
-  }
-  const { open } = t.context.wrapped
-  let i = 0
-  for (const repo of repositories) {
-    const call = open.onCall(i++)
-    if (typeof repo?.path === 'function') call.resolves(repo)
-    else call.rejects(null)
-  }
+const argsTest =
+  (projects, repositories, questions, pwd, expected) => async () => {
+    t.context.wrapped = {
+      ask: stub(external, 'ask'),
+      cwd: stub(external, 'cwd').returns(pwd),
+      open: stub(external.Repository, 'open'),
+    }
+    const { ask, open } = t.context.wrapped
+    let i = 0
+    for (const repo of repositories) {
+      const call = open.onCall(i++)
+      if (typeof repo?.path === 'function') call.resolves(repo)
+      else call.rejects(null)
+    }
+    i = 0
+    for (const answer of questions) {
+      ask.onCall(i++).resolves(answer)
+    }
+    ask.resolves(false)
 
-  deepEqual(await args(projects), expected)
-}
+    deepEqual(await args(projects), expected)
+
+    equal(
+      ask.calledWithMatch(
+        'No git repository in {{{project}}} directory. Would you like to continue?',
+        { project: match.string },
+      ),
+      questions?.length > 0,
+    )
+  }
 
 describe('args', { concurrency: false }, () => {
   afterEach(() => {
@@ -47,9 +62,10 @@ describe('args', { concurrency: false }, () => {
     argsTest(
       ['projects/tracked', 'documents/drafts'],
       [fakeRepo('/opt/zx/projects/tracked/.git/'), null],
+      [true],
       '/opt/zx',
-      [gourceCommand('projects/tracked')]
-    )
+      [gourceCommand('projects/tracked')],
+    ),
   )
 
   it(
@@ -61,12 +77,13 @@ describe('args', { concurrency: false }, () => {
         fakeRepo('/opt/abc/projects/tracked/.git/'),
         fakeRepo('/opt/abc/models/important/.git/'),
       ],
+      [],
       '/opt/abc',
       [
         gourceCommand('projects/cool'),
         gourceCommand('projects/tracked'),
         gourceCommand('models/important'),
-      ]
-    )
+      ],
+    ),
   )
 })
