@@ -7,9 +7,16 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
-    "prettier": "^3.2.5"
+    "@types/sinon": "^17.0.3",
+    "prettier": "^3.2.5",
+    "sinon": "^17.0.1"
   },
   "scripts": {
-    "test": "prettier --write ."
+    "lint": "prettier --write .",
+    "test": "node --test --test-reporter tap test/",
+    "test:watch": "node --test --test-reporter tap --watch test/"
+  },
+  "dependencies": {
+    "nodegit": "^0.27.0"
   }
 }
