@@ -3,7 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import { fake, match, stub } from 'sinon'
 
-import { args, external } from '../src/args.js'
+import { args, cliEscape, cliOptions, external } from '../src/args.js'
 
 const fakeRepo = (path) => {
   const repo = {}
@@ -11,8 +11,11 @@ const fakeRepo = (path) => {
   return repo
 }
 
-const gourceCommand = (path) =>
-  `"gource --output-custom-log - ${path} | sed -r 's#(.+)\\|#\\1|${path}#'"`
+const gourceCommand = (options, path) =>
+  `"gource --output-custom-log ${options} - ${path} | sed -r 's#(.+)\\|#\\1|${path}#'"`.replace(
+    /\s+/g,
+    ' ',
+  )
 
 const t = {
   context: {},
@@ -38,7 +41,7 @@ const argsTest =
     }
     ask.resolves(false)
 
-    deepEqual(await args(projects), expected)
+    deepEqual(await args(projects, null), expected)
 
     equal(
       ask.calledWithMatch(
@@ -64,7 +67,7 @@ describe('args', { concurrency: false }, () => {
       [fakeRepo('/opt/zx/projects/tracked/.git/'), null],
       [true],
       '/opt/zx',
-      [gourceCommand('projects/tracked')],
+      [gourceCommand('', 'projects/tracked')],
     ),
   )
 
@@ -80,10 +83,58 @@ describe('args', { concurrency: false }, () => {
       [],
       '/opt/abc',
       [
-        gourceCommand('projects/cool'),
-        gourceCommand('projects/tracked'),
-        gourceCommand('models/important'),
+        gourceCommand('', 'projects/cool'),
+        gourceCommand('', 'projects/tracked'),
+        gourceCommand('', 'models/important'),
       ],
+    ),
+  )
+})
+
+const cliOptionsTest = (options, expected, escaped) => () => {
+  const result = cliOptions(options)
+  equal(result.join(' '), expected)
+  equal(result.map(cliEscape).join(' '), escaped ?? expected)
+}
+
+describe('cliOptions', { concurrency: true }, () => {
+  it('empty string on null given', cliOptionsTest(null, ''))
+  it('empty string on undefined given', cliOptionsTest(undefined, ''))
+  it('empty string on empty object given', cliOptionsTest({}, ''))
+
+  it('1 short switch enabled', cliOptionsTest({ H: true }, '-H'))
+  it('1 short switch disabled', cliOptionsTest({ H: false }, ''))
+
+  it('1 long switch enabled', cliOptionsTest({ help: true }, '--help'))
+  it('1 long switch disabled', cliOptionsTest({ help: false }, ''))
+
+  it('1 short parameter', cliOptionsTest({ b: 'aa44cd' }, '-b aa44cd'))
+  it(
+    '1 long parameter',
+    cliOptionsTest({ 'start-date': '2023-01-01' }, '--start-date 2023-01-01'),
+  )
+
+  it(
+    '1 short switch enabled and 1 short parameter',
+    cliOptionsTest({ f: true, b: 'aa44cd' }, '-f -b aa44cd'),
+  )
+  it(
+    '2 long and 1 short parameters',
+    cliOptionsTest(
+      { 'font-colour': '23adcc', title: 'test', b: 'aa44cd' },
+      '--font-colour 23adcc --title test -b aa44cd',
+    ),
+  )
+  it(
+    '3 long parameters',
+    cliOptionsTest(
+      {
+        'font-colour': '23adcc',
+        title: 'test',
+        'start-date': '2023-01-01 12:00:00',
+      },
+      '--font-colour 23adcc --title test --start-date 2023-01-01 12:00:00',
+      "--font-colour 23adcc --title test --start-date '2023-01-01 12:00:00'",
     ),
   )
 })
