@@ -1,17 +1,14 @@
 #!/usr/bin/env zx
 
-import { readFile } from 'fs/promises'
-import { join } from 'path'
-import { cwd, exit } from 'process'
+import { exit } from 'process'
 
 import 'zx/globals'
 
 import { args, cliOptions } from './args.js'
+import { readConfig } from './config.js'
 
 const configFile = '.gourcezx.yml'
-const { projects, gource, concurrently } = YAML.parse(
-  await readFile(join(cwd(), configFile), 'utf-8'),
-)
+const { projects, gource, concurrently } = await readConfig(configFile)
 const jobs = await args(projects, gource)
 if (jobs.length < 1) {
   console.warn(`Nothing to do. Please check your config file: ${configFile}`)
