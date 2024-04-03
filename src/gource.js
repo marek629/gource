@@ -22,12 +22,13 @@ const concurrentlyOptions = cliOptions({
   ...concurrently?.options,
 })
 
-const pipeline = $`yarn dlx concurrently --raw ${concurrentlyOptions} ${jobs}`
-  .pipe($`grep -v '➤'`.quiet())
-  .pipe(
-    $`grep --color=never -E '^[0-9]+\|[[:alnum:][:space:]]+\|[AMD]+\|[[:alnum:][:space:][:punct:]]+$' -`,
-  )
-  .pipe($`sort`)
-  .pipe($`gource ${cliOptions(gource?.options)} --log-format custom -`)
+const pipeline =
+  $`${concurrently?.executor?.split(' ')} concurrently --raw ${concurrentlyOptions} ${jobs}`
+    .pipe($`grep -v '➤'`.quiet())
+    .pipe(
+      $`grep --color=never -E '^[0-9]+\|[[:alnum:][:space:]]+\|[AMD]+\|[[:alnum:][:space:][:punct:]]+$' -`,
+    )
+    .pipe($`sort`)
+    .pipe($`gource ${cliOptions(gource?.options)} --log-format custom -`)
 
 await spinner('gource is running', () => pipeline)
